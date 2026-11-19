@@ -3,6 +3,7 @@
 #   ./install.sh                        Claude Code
 #   ./install.sh codex hermes-agent     those harnesses (any number)
 #   ./install.sh --mine claude-code     only my own skills (swarm, skill_select, prompt_improvement)
+# The full install also runs GSD's installer and, for codex, adds OpenAI's Codex Security plugin.
 # Harnesses: claude-code, codex, antigravity, antigravity-cli, hermes-agent, gemini-cli, deepseek,
 # or any other agent id supported by `npx skills` (https://github.com/vercel-labs/skills).
 set -euo pipefail
@@ -27,7 +28,7 @@ mine_only=0; harnesses=()
 for arg in "$@"; do
   case $arg in
     --mine) mine_only=1 ;;
-    -h|--help) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     -*) echo "unknown option: $arg (see --help)" >&2; exit 2 ;;
     *) harnesses+=("$arg") ;;
   esac
@@ -51,9 +52,46 @@ add() {
   npx -y skills add "$1" -g -y -s '*' --full-depth "${agent_args[@]}" || failed+=("$1")
 }
 
+# GSD has its own installer; map our harness names to its flags (it has no DeepSeek Harness target).
+gsd_flag() {
+  case $1 in
+    claude-code) echo --claude ;;
+    antigravity|antigravity-cli) echo --antigravity ;;
+    hermes-agent) echo --hermes ;;
+    gemini-cli) echo --gemini ;;
+    qwen-code) echo --qwen ;;
+    github-copilot) echo --copilot ;;
+    codex|opencode|kilo|cursor|windsurf|augment|trae|cline|codebuddy|zcode|pi) echo "--$1" ;;
+  esac
+}
+
+install_gsd() {
+  local flags=() skipped=() f
+  for h in "${harnesses[@]}"; do
+    f=$(gsd_flag "$h")
+    if [[ -n $f ]]; then flags+=("$f"); else skipped+=("$h"); fi
+  done
+  (( ${#skipped[@]} )) && echo "    (GSD does not support: ${skipped[*]}; skipped there)"
+  (( ${#flags[@]} )) || return 0
+  echo "==> GSD (open-gsd/gsd-core)"
+  npx -y @opengsd/gsd-core@latest --global "${flags[@]}" || failed+=("GSD")
+}
+
+# Codex Security is OpenAI's proprietary, Codex-only plugin: install it through Codex itself.
+install_codex_security() {
+  [[ " ${harnesses[*]} " == *" codex "* ]] || return 0
+  if ! command -v codex >/dev/null; then
+    echo "    (Codex Security skipped: the codex command is not installed)"; return 0
+  fi
+  echo "==> Codex Security (OpenAI)"
+  codex plugin add codex-security@openai-api-curated || failed+=("Codex Security")
+}
+
 add "$mine"
 if (( ! mine_only )); then
   for src in "${SOURCES[@]}"; do add "$src"; done
+  install_gsd
+  install_codex_security
 fi
 
 if (( dsh )); then
@@ -71,4 +109,3 @@ if (( ${#failed[@]} )); then
   exit 1
 fi
 echo "Done. Restart your harness to load the skills."
-(( mine_only )) || echo "Optional: GSD has its own installer, see README (npx @opengsd/gsd-core@latest)."

@@ -39,6 +39,20 @@ npx skills add MSpider3/my-ai-skills -g -a claude-code   # or -a codex, -a herme
 
 Restart your harness afterwards so it loads the new skills.
 
+### Or let your AI agent install it
+
+Don't want to do it by hand? Paste this into your AI agent (Claude Code, Codex, Antigravity, Hermes, …)
+and it will do the install for you:
+
+```text
+Install the AI skills collection from https://github.com/MSpider3/my-ai-skills for this harness.
+Clone the repo, read its README, then run ./install.sh with the harness name that matches you
+(for example: ./install.sh claude-code). If you want only the author's own three skills, use --mine.
+When it finishes, tell me what was installed, what was skipped, and anything that failed.
+```
+
+Your agent will ask before running commands if your harness is set up that way, so you stay in control.
+
 | Harness | Name to pass | Where the skills go |
 |---|---|---|
 | Claude Code | `claude-code` | `~/.claude/skills` |
@@ -51,7 +65,8 @@ Restart your harness afterwards so it loads the new skills.
 
 ### Good to know
 
-- **It's big.** The full install is about 600 skills (around 45 MB). Use `--mine` if you only want my three.
+- **It's big.** The full install is about 670 skills. Use `--mine` if you only want my three.
+- **The full install also runs two other installers.** GSD's own installer runs for every harness it supports (all except DeepSeek Harness). If you install for `codex` and have the `codex` command, it also adds OpenAI's Codex Security plugin with `codex plugin add`.
 - **Skills run with your agent's permissions.** Some of them install software or run setup scripts when you use them. Read a skill before you rely on it.
 - **No telemetry.** The installer turns off the `npx skills` install telemetry.
 - **Update everything:** `npx skills update -g`. **Remove a skill:** `npx skills remove <name> -g`.
@@ -72,19 +87,24 @@ Everything below belongs to its authors, under its own license. `install.sh` dow
 | Skills CLI skills (find-skills, …) | [vercel-labs/skills](https://github.com/vercel-labs/skills) | 3 | MIT |
 | HyperFrames | [heygen-com/hyperframes](https://github.com/heygen-com/hyperframes) | ~16 | see repo |
 | OpenAI skills (skill-creator, skill-installer, openai-docs, imagegen, …) | [openai/skills](https://github.com/openai/skills) | ~43 | see repo |
+| GSD (get-shit-done), via its own installer | [open-gsd/gsd-core](https://github.com/open-gsd/gsd-core) | ~71 | MIT |
+| Codex Security (threat-model, deep-security-scan, …), Codex only | [openai/codex-security](https://github.com/openai/codex-security) | 15 | Proprietary (OpenAI) |
 
-These are part of my setup too, but they have their own installers or come with a harness, so `install.sh` doesn't install them:
+These come with a harness or another tool, so `install.sh` doesn't install them:
 
 | Collection | Source | How to get it |
 |---|---|---|
-| GSD (get-shit-done), ~71 skills | [open-gsd/gsd-core](https://github.com/open-gsd/gsd-core) | `npx @opengsd/gsd-core@latest`. It asks which harness: Claude Code, Codex, Gemini, Antigravity or OpenCode. |
-| Codex Security, 15 skills (threat-model, deep-security-scan, …) | OpenAI, [Codex Security](https://developers.openai.com/codex/security) | Install the `codex-security` plugin inside Codex. |
 | Antigravity built-ins (agy-customizations, antigravity-guide, …) | Google Antigravity | Included with Antigravity. |
 | reverse-engineer-anything | [morluto/rea](https://github.com/morluto/rea) | Comes with REA. |
 
 `skill_select`'s catalog also lists a few skills I picked up whose original source I haven't confirmed
 (graphify, karpathy-guidelines, review-agent, technical-project-management). If one is yours, open an
 issue and I'll credit you and link it.
+
+## Checks
+
+`bash test_install.sh` tests the installer offline, using fake commands, so nothing gets installed.
+`bash skills/swarm/test_swarm.sh` tests the swarm board and worktree helper.
 
 ## License
 
